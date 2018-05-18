@@ -1,0 +1,91 @@
+defaults: &defaults
+  docker:
+    - image: circleci/golang:1.10
+  working_directory: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+
+version: 2
+jobs:
+  verify:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run:
+          name: Install dep
+          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+      - run:
+          name: Install dependencies
+          command: dep ensure -v
+
+      - run:
+          name: Check the style
+          command: make style
+
+      - run:
+          name: Vet the code
+          command: make vet
+
+      - persist_to_workspace:
+          root: .
+          paths: ["."]
+
+  publish-revision:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+
+      - setup_remote_docker
+
+      - run:
+          name: Build the exporter Docker image
+          command: DOCKER_TAG=$CIRCLE_SHA1 make docker
+
+      - run:
+          name: Login to the Docker repository
+          command: echo $DOCKER_REGISTRY_PASSWORD | docker login nexus.in.ft.com:5000 --username $DOCKER_REGISTRY_USERNAME --password-stdin
+
+      - run:
+          name: Push the Docker image
+          command: DOCKER_TAG=$CIRCLE_SHA1 make docker-push
+
+  publish-latest:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+
+      - setup_remote_docker
+
+      - run:
+          name: Build the exporter Docker image
+          command: DOCKER_TAG=latest make docker
+
+      - run:
+          name: Login to the Docker repository
+          command: echo $DOCKER_REGISTRY_PASSWORD | docker login nexus.in.ft.com:5000 --username $DOCKER_REGISTRY_USERNAME --password-stdin
+
+      - run:
+          name: Push the Docker image
+          command: DOCKER_TAG=latest make docker-push
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+      - verify
+
+      - publish-revision:
+          requires:
+            - verify
+          filters:
+            branches:
+              only: master
+
+      - publish-latest:
+          requires:
+            - verify
+          filters:
+            branches:
+              only: master
