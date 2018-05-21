@@ -15,4 +15,5 @@
 vendor/
 
 # Project binaries
-./nagios-exporter
+nagios-exporter
+!nagios-exporter/
