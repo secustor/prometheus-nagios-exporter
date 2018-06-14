@@ -22,7 +22,7 @@ func NewNagiosCollector(target string) *nagiosCollector {
 		status: prometheus.NewDesc(
 			"nagios_host_status",
 			"Status of a host monitored by Nagios, 0 is OK.",
-			[]string{"instance"},
+			[]string{"host"},
 			nil,
 		),
 		duration: prometheus.NewDesc(
