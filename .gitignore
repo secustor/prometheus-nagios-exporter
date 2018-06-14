@@ -13,7 +13,3 @@
 
 # Go dep dependencies
 vendor/
-
-# Project binaries
-nagios-exporter
-!nagios-exporter/
