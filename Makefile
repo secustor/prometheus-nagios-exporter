@@ -27,20 +27,19 @@ vet: ## Examine the Go source code.
 	go vet $(PACKAGES)
 	@$(DONE)
 
-build: ## Build the binary.
-	@echo ">> building the binary"
-	go build -o health-check-exporter cmd/health-check-exporter/main.go
-	@$(DONE)
-
-docker: ## Build the docker image.
+build: ## Build the Docker image.
 	@echo ">> building the docker image"
-	docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)" .
+	docker build -t "financial-times/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)" .
 	@$(DONE)
 
-docker-push: ## Push the docker image to the FT private repository.
-docker-push:
+run: ## Run the Docker image.
+	@echo ">> building the docker image"
+	docker run -p 9942:9942 "financial-times/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)"
+	@$(DONE)
+
+publish: ## Push the docker image to the FT private repository.
 	@echo ">> pushing the docker image"
-	docker tag "$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)" "nexus.in.ft.com:5000/$(DOCKER_TEAM_NAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)"
+	docker tag "financial-times/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)" "nexus.in.ft.com:5000/$(DOCKER_TEAM_NAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)"
 	docker push "nexus.in.ft.com:5000/$(DOCKER_TEAM_NAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)"
 	@$(DONE)
 

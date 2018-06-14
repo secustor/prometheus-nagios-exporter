@@ -5,10 +5,12 @@ WORKDIR /go/src/github.com/Financial-Times/prometheus-nagios-exporter/
 RUN apk add --update --no-cache curl git && \
     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-COPY . .
+COPY Gopkg.* ./
+COPY cmd/ cmd/
+COPY internal/ internal/
 
-RUN dep ensure && \
-    go build -o /tmp/nagios-exporter cmd/nagios-exporter/main.go
+RUN dep ensure
+RUN go build -o /tmp/nagios-exporter cmd/nagios-exporter/main.go
 
 FROM alpine:latest
 
@@ -18,6 +20,6 @@ WORKDIR /root/
 
 COPY --from=build /tmp/nagios-exporter .
 
-EXPOSE 9842
+EXPOSE 9942
 
-CMD ["/root/nagios-exporter"]
+ENTRYPOINT ["/root/nagios-exporter"]

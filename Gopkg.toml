@@ -26,25 +26,17 @@
 
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/Financial-Times/prometheus-health-check-exporter"
+  name = "github.com/PuerkitoBio/goquery"
+  version = "1.4.1"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/prometheus/client_golang"
+  version = "0.8.0"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "1.0.5"
 
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-
 [prune]
   go-tests = true
   unused-packages = true
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/net"

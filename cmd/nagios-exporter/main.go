@@ -1,52 +1,71 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"net/http"
 	"os"
+	"os/signal"
 
-	"golang.org/x/net/html"
+	"github.com/Financial-Times/prometheus-nagios-exporter/internal/server"
+	"golang.org/x/crypto/ssh/terminal"
+
+	log "github.com/sirupsen/logrus"
 )
 
-func worker(host string) {
-	url := fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?servicestatustypes=28&hoststatustypes=15", host)
-	res, err := http.Get(url)
-
-	if err != nil {
-		panic(err)
-	}
-
-	body := res.Body
-	defer body.Close()
-
-	doc, err := html.Parse(body)
-	if err != nil {
-		panic(err)
-	}
-
-	html.Render(os.Stdout, doc)
-}
+var (
+	listenAddress string
+	healthy       int32
+	verbose       bool
+)
 
 func main() {
-	done := make(chan bool, 1)
+	flag.StringVar(&listenAddress, "web.listen-address", ":9942", "Address to listen on for web interface and telemetry.")
+	flag.BoolVar(&verbose, "verbose", false, "Enable more detailed logging.")
+	flag.Parse()
 
-	hosts := make(chan string, len(os.Args[1:]))
-
-	for _, host := range os.Args[1:] {
-		hosts <- host
+	if verbose {
+		log.SetLevel(log.DebugLevel)
 	}
 
-	close(hosts)
+	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+
+	server := server.Server(listenAddress)
+
+	done := make(chan bool)
 
 	go func() {
-		for {
-			if host, c := <-hosts; c {
-				worker(host)
-			} else {
-				done <- true
-			}
+		quit := make(chan os.Signal, 1)
+
+		signal.Notify(quit, os.Interrupt)
+
+		<-quit
+
+		if err := server.Close(); err != nil {
+			log.WithFields(log.Fields{
+				"event": "ERROR_STOPPING",
+				"err":   err,
+			}).Fatal("Could not gracefully stop the nagios exporter.")
 		}
+
+		close(done)
 	}()
 
+	log.WithFields(log.Fields{
+		"event":         "STARTED",
+		"listenAddress": listenAddress,
+	}).Info("nagios exporter is ready to handle requests.")
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.WithFields(log.Fields{
+			"event":         "ERROR_STARTING",
+			"listenAddress": listenAddress,
+			"err":           err,
+		}).Fatal("Could not listen at the specified address.")
+	}
+
 	<-done
+
+	log.WithField("event", "STOPPED").Info("nagios exporter has stopped.")
 }
