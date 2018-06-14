@@ -63,7 +63,6 @@ func Scrape(instance string) (map[string]float64, error) {
 	// body > p > table.status > tbody > tr:nth-child(8) > td.statusEven > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a
 	for i := range table.Nodes {
 		if i == 0 {
-			log.Debug("skipping first node")
 			continue
 		}
 

@@ -71,7 +71,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
-      Priority: 5
+      Priority: 200
       Conditions:
         - Field: host-header
           Values:
@@ -84,7 +84,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
-      Priority: 6
+      Priority: 201
       Conditions:
         - Field: host-header
           Values:
