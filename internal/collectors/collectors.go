@@ -16,7 +16,7 @@ type nagiosCollector struct {
 	duration *prometheus.Desc
 }
 
-func NewNagiosCollector(instance string) *nagiosCollector {
+func NewNagiosCollector(target string) *nagiosCollector {
 	return &nagiosCollector{
 		target: target,
 		status: prometheus.NewDesc(
@@ -54,7 +54,7 @@ func Scrape(target string) (map[string]float64, error) {
 		return nil, err
 	}
 
-	var host string
+	var instance string
 
 	instances := make(map[string]float64)
 
@@ -68,8 +68,8 @@ func Scrape(target string) (map[string]float64, error) {
 
 		node := table.Eq(i)
 
-		if h := node.Find("td:nth-of-type(1) > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a").Text(); h != "" {
-			host = h
+		if host := node.Find("td:nth-of-type(1) > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a").Text(); host != "" {
+			instance = host
 		}
 
 		name := node.Find("td:nth-of-type(2) > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a").Text()
