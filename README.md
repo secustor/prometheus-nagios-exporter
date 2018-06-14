@@ -15,6 +15,9 @@ Prometheus asks this exporter for metrics, one Nagios target at a time.
     - targets:
       - prometheus-nagios-exporter-eu-west-1.in.ft.com
       - prometheus-nagios-exporter-us-east-1.in.ft.com
+      labels:
+        system: prometheus-nagios-exporter
+        observe: yes
 
 - job_name: nagios
   scheme: https
@@ -29,7 +32,7 @@ Prometheus asks this exporter for metrics, one Nagios target at a time.
         system: an-example-system-code
   relabel_configs:
     - source_labels: [__address__]
-      target_label: __param_collect
+      target_label: __param_instance
     - source_labels: [__address__]
       target_label: instance
     - target_label: __address__
