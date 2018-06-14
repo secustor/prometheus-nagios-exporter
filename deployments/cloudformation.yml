@@ -4,15 +4,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   Nagios Prometheus exporter service for Operations & Reliability, runs on the existing ECS cluster.
 
-Mappings:
-  '027104099916':
-    eu-west-1:
-      VpcId: vpc-f3534591
-      Cluster: arn:aws:ecs:eu-west-1:027104099916:cluster/operations-reliability
-      HttpsListenerArn: arn:aws:elasticloadbalancing:eu-west-1:027104099916:listener/app/aws-c-Clust-OGWTT3O1FRLK/c99be4122757b30c/e1c47d1e3989d5f1
-      ServiceRole: arn:aws:iam::027104099916:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS
-
 Parameters:
+
+  SplunkHecToken:
+    Type: String
+    Description: Find this at https://financialtimes.splunkcloud.com/en-GB/manager/financial_times_production/http-eventcollector.
+    NoEcho: true
 
   DockerRevision:
     Type: String
@@ -28,33 +25,36 @@ Resources:
           Image: !Sub "nexus.in.ft.com:5000/operations-reliability/prometheus-nagios-exporter:${DockerRevision}"
           MemoryReservation: 256
           PortMappings:
-            - ContainerPort: 9852
+            - ContainerPort: 9942
           LogConfiguration:
-            LogDriver: awslogs
+            LogDriver: splunk
             Options:
-                awslogs-group: /aws/ecs/operations-reliability/prometheus-nagios-exporter
-                awslogs-region: !Ref AWS::Region
+              splunk-source: !Sub "prometheus-nagios-exporter-${AWS::Region}.in.ft.com"
+              splunk-url: https://http-inputs-financialtimes.splunkcloud.com
+              splunk-token: !Ref SplunkHecToken
+              splunk-format: json
+              splunk-gzip: true
 
   Service:
     Type: AWS::ECS::Service
     DependsOn: ListenerRule
     Properties:
-      Cluster: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "Cluster"]
+      Cluster: !ImportValue "Prometheus-ECS-Cluster-Name"
       TaskDefinition: !Ref Task
       DesiredCount: 1
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
-      Role: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "ServiceRole"]
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
       LoadBalancers:
         - TargetGroupArn: !Ref TargetGroup
-          ContainerPort: 9852
+          ContainerPort: 9942
           ContainerName: prometheus-nagios-exporter
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      VpcId: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "VpcId"]
+      VpcId: !ImportValue "Prometheus-ECS-Cluster-VPC"
       Port: 80
       Protocol: HTTP
       Matcher:
@@ -70,8 +70,8 @@ Resources:
   ListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "HttpsListenerArn"]
-      Priority: 9
+      ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      Priority: 5
       Conditions:
         - Field: host-header
           Values:
@@ -83,8 +83,8 @@ Resources:
   RegionalListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "HttpsListenerArn"]
-      Priority: 10
+      ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      Priority: 6
       Conditions:
         - Field: host-header
           Values:
@@ -92,9 +92,3 @@ Resources:
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
-
-  LogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: /aws/ecs/operations-reliability/prometheus-nagios-exporter
-      RetentionInDays: 7
