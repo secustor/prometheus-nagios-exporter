@@ -40,7 +40,7 @@ jobs:
 
       - run:
           name: Build the exporter Docker image
-          command: DOCKER_TAG=$CIRCLE_SHA1 make docker
+          command: DOCKER_TAG=$CIRCLE_SHA1 make build
 
       - run:
           name: Login to the Docker repository
@@ -48,7 +48,7 @@ jobs:
 
       - run:
           name: Push the Docker image
-          command: DOCKER_TAG=$CIRCLE_SHA1 make docker-push
+          command: DOCKER_TAG=$CIRCLE_SHA1 make publish
 
   publish-latest:
     <<: *defaults
@@ -60,7 +60,7 @@ jobs:
 
       - run:
           name: Build the exporter Docker image
-          command: DOCKER_TAG=latest make docker
+          command: DOCKER_TAG=latest make build
 
       - run:
           name: Login to the Docker repository
@@ -68,7 +68,7 @@ jobs:
 
       - run:
           name: Push the Docker image
-          command: DOCKER_TAG=latest make docker-push
+          command: DOCKER_TAG=latest make publish
 
 workflows:
   version: 2
