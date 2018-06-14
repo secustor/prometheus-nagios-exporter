@@ -18,16 +18,18 @@ Prometheus asks this exporter for metrics, one Nagios target at a time.
 
 - job_name: nagios
   scheme: https
-  metrics_path: /scrape
-  scrape_interval: 60s
+  metrics_path: /collect
   static_configs:
     - targets:
       - 10.0.0.1
       - 10.0.0.2
       - 10.0.0.3
+      labels:
+        observe: yes
+        system: an-example-system-code
   relabel_configs:
     - source_labels: [__address__]
-      target_label: __param_endpoint
+      target_label: __param_collect
     - source_labels: [__address__]
       target_label: instance
     - target_label: __address__

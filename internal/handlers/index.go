@@ -24,7 +24,7 @@ func Index() http.Handler {
 			<p>
 				<ul>
 					<li><a href="/metrics">/metrics</a></li>
-					<li><a href="/collect?instance=ftmon50799-law1b-eu-p.osb.ft.com">/collect?instance=10.170.37.161</a></li>
+					<li><a href="/collect?instance=10.170.37.161">/collect?instance=10.170.37.161</a></li>
 					<li><a href="/__gtg">/__gtg</a></li>
 				</ul>
 			</p>
