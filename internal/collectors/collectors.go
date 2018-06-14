@@ -11,18 +11,18 @@ import (
 )
 
 type nagiosCollector struct {
-	instance string
+	target   string
 	status   *prometheus.Desc
 	duration *prometheus.Desc
 }
 
 func NewNagiosCollector(instance string) *nagiosCollector {
 	return &nagiosCollector{
-		instance: instance,
+		target: target,
 		status: prometheus.NewDesc(
 			"nagios_host_status",
 			"Status of a host monitored by Nagios, 0 is OK.",
-			[]string{"host"},
+			[]string{"instance"},
 			nil,
 		),
 		duration: prometheus.NewDesc(
@@ -39,8 +39,8 @@ func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.duration
 }
 
-func Scrape(instance string) (map[string]float64, error) {
-	res, err := http.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1", instance))
+func Scrape(target string) (map[string]float64, error) {
+	res, err := http.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1", target))
 
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func Scrape(instance string) (map[string]float64, error) {
 
 	var host string
 
-	hosts := make(map[string]float64)
+	instances := make(map[string]float64)
 
 	table := doument.Find("table.status > tbody > tr")
 
@@ -87,25 +87,25 @@ func Scrape(instance string) (map[string]float64, error) {
 			status = 1
 		}
 
-		if val, exists := hosts[host]; !exists || val == 0 {
-			hosts[host] = status
+		if val, exists := instances[instance]; !exists || val == 0 {
+			instances[instance] = status
 		}
 	}
 
-	return hosts, nil
+	return instances, nil
 }
 
 func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 	// Fetch and record the health check results.
 	start := time.Now()
 
-	hosts, err := Scrape(collector.instance)
+	hosts, err := Scrape(collector.target)
 
 	// If the request failed, bubble the error up so it's reported in Prometheus.
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event":    "ERROR_NAGIOS_SCRAPE",
-			"instance": collector.instance,
+			"instance": collector.target,
 		}).Error(err)
 
 		ch <- prometheus.NewInvalidMetric(nil, err)
