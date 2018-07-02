@@ -47,3 +47,9 @@ Ensure the following variables are set in the CircleCI project:
 
 * `DOCKER_REGISTRY_USERNAME`
 * `DOCKER_REGISTRY_PASSWORD`
+
+### Local Development
+
+Use the Makefile to locally test your changes. The 'make build' command will create a new local docker image, then the 'make run' command will execute these changes locally.
+
+Go to `http://localhost:9942/` (or the port specifed on the `make run` command) on your browser to see the index page for the exporter.
