@@ -1,35 +1,40 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/Financial-Times/prometheus-nagios-exporter/internal/server"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	listenAddress string
-	healthy       int32
-	verbose       bool
-)
-
 func main() {
-	flag.StringVar(&listenAddress, "web.listen-address", ":9942", "Address to listen on for web interface and telemetry.")
-	flag.BoolVar(&verbose, "verbose", false, "Enable more detailed logging.")
-	flag.Parse()
+	viper.AutomaticEnv()
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
 
-	if verbose {
+	pflag.IntP("port", "p", 9742, "Port to listen on")
+	pflag.BoolP("verbose", "v", false, "Enable more detailed logging.")
+	pflag.Parse()
+
+	viper.BindPFlags(pflag.CommandLine)
+
+	if viper.GetBool("verbose") {
 		log.SetLevel(log.DebugLevel)
 	}
 
 	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
+
+	listenAddress := fmt.Sprintf(":%d", viper.GetInt("port"))
 
 	server := server.Server(listenAddress)
 

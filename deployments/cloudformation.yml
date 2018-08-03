@@ -13,34 +13,50 @@ Parameters:
 
   DockerRevision:
     Type: String
-    Default: latest
+
+  ServiceName:
+    Type: String
+    Default: "prometheus-nagios-exporter"
+
+  ServiceHttpPort:
+    Description: >
+      The port to route http traffic from external sources, via the ALB.
+      See https://github.com/Financial-Times/monitoring-aggregation-ecs/blob/master/documentation/SERVICE_DEFINITIONS.md for guidelines
+    Type: Number
+    Default: 12000
 
 Resources:
 
-  Task:
+  TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
+      Family: !Ref ServiceName
       ContainerDefinitions:
-        - Name: prometheus-nagios-exporter
-          Image: !Sub "nexus.in.ft.com:5000/operations-reliability/prometheus-nagios-exporter:${DockerRevision}"
-          MemoryReservation: 256
+        - Name: !Sub "${ServiceName}-service"
+          Image: !Sub "nexus.in.ft.com:5000/operations-reliability/${ServiceName}:${DockerRevision}"
           PortMappings:
-            - ContainerPort: 9942
+            - ContainerPort: !Ref ServiceHttpPort
+          DockerLabels:
+            com.ft.service-name: !Sub "${ServiceName}-service"
+            com.ft.service-region: !Ref "AWS::Region"
+          MemoryReservation: 256
           LogConfiguration:
             LogDriver: splunk
             Options:
-              splunk-source: !Sub "prometheus-nagios-exporter-${AWS::Region}.in.ft.com"
+              splunk-source: !Sub "${ServiceName}-${AWS::Region}.in.ft.com"
               splunk-url: https://http-inputs-financialtimes.splunkcloud.com
               splunk-token: !Ref SplunkHecToken
               splunk-format: json
               splunk-gzip: true
+              tag: "{{.ImageName}}/{{.ImageID}}:{{.Name}}/{{.ID}}"
+              labels: org.opencontainers.revision,org.opencontainers.created,com.ft.build-number,com.ft.service-name,com.ft.service-region
 
   Service:
     Type: AWS::ECS::Service
     DependsOn: ListenerRule
     Properties:
       Cluster: !ImportValue "Prometheus-ECS-Cluster-Name"
-      TaskDefinition: !Ref Task
+      TaskDefinition: !Ref TaskDefinition
       DesiredCount: 1
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -48,8 +64,8 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
       LoadBalancers:
         - TargetGroupArn: !Ref TargetGroup
-          ContainerPort: 9942
-          ContainerName: prometheus-nagios-exporter
+          ContainerPort: !Ref ServiceHttpPort
+          ContainerName: !Sub "${ServiceName}-service"
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -71,11 +87,12 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      # Should be within a 100 width range. See https://github.com/Financial-Times/monitoring-aggregation-ecs/blob/master/documentation/SERVICE_DEFINITIONS.md for guidelines
       Priority: 200
       Conditions:
         - Field: host-header
           Values:
-            - prometheus-nagios-exporter.in.ft.com
+            - !Sub "${ServiceName}.in.ft.com"
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward
@@ -84,11 +101,12 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      # Should be within a 100 width range. See https://github.com/Financial-Times/monitoring-aggregation-ecs/blob/master/documentation/SERVICE_DEFINITIONS.md for guidelines
       Priority: 201
       Conditions:
         - Field: host-header
           Values:
-            - !Sub "prometheus-nagios-exporter-${AWS::Region}.in.ft.com"
+            - !Sub "${ServiceName}-${AWS::Region}.in.ft.com"
       Actions:
         - TargetGroupArn: !Ref TargetGroup
           Type: forward

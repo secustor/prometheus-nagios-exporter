@@ -41,12 +41,16 @@ Prometheus asks this exporter for metrics, one Nagios target at a time.
 
 ## Development
 
+### Environment variables
+
+| Variable  | Default | Description                                                 |
+| --------- | ------- | ----------------------------------------------------------- |
+| `PORT`    | `8080`  | The port which the service listens to HTTP connections over |
+| `VERBOSE` | `false` | Whether to enable verbose logging                           |
+
 ### CircleCI
 
-Ensure the following variables are set in the CircleCI project:
-
-* `DOCKER_REGISTRY_USERNAME`
-* `DOCKER_REGISTRY_PASSWORD`
+Currently no environment variables are defined on the CircleCI project. Any in use are pulled from a shared CircleCI [context](https://circleci.com/docs/2.0/contexts/).
 
 ### Local Development
 

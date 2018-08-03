@@ -5,18 +5,36 @@ defaults: &defaults
 
 version: 2
 jobs:
-  verify:
+  install:
     <<: *defaults
     steps:
       - checkout
 
-      - run:
-          name: Install dep
-          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - restore_cache:
+          key: v1-gopkg-{{ checksum "Gopkg.lock" }}
 
       - run:
           name: Install dependencies
-          command: dep ensure -v
+          command: |
+            if [ ! -d  /go/src/github.com/Financial-Times/prometheus-nagios-exporter/vendor ]; then
+                dep ensure
+            fi
+
+      - save_cache:
+          key: v1-gopkg-{{ checksum "Gopkg.lock" }}
+          paths:
+            -  /go/src/github.com/Financial-Times/prometheus-nagios-exporter/vendor
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  verify:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+            at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
 
       - run:
           name: Check the style
@@ -26,66 +44,112 @@ jobs:
           name: Vet the code
           command: make vet
 
+  build-image:
+    <<: *defaults
+    steps:
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+
+      - run:
+          name: Login to the Docker repository
+          command: echo "$DOCKER_REGISTRY_PASSWORD" | docker login nexus.in.ft.com:5000 --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
+
+      - run:
+          name: Build the exporter Docker image if it does not exist
+          command: |
+            export IMAGE_TAG="nexus.in.ft.com:5000/operations-reliability/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1"
+            docker pull "$IMAGE_TAG" >/dev/null 2>&1 || true
+            if $(docker image inspect "$IMAGE_TAG" >/dev/null 2>&1); then
+              echo "Skipping build as image exists for git sha \"$CIRCLE_SHA1\""
+              docker tag "$IMAGE_TAG" "financial-times/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1"
+            else
+              echo "Building new docker image"
+              make build
+            fi
+            mkdir -p caches
+            docker save -o "caches/docker-cache-$CIRCLE_SHA1.tar" "financial-times/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1"
+
       - persist_to_workspace:
           root: .
-          paths: ["."]
+          paths:
+            - .
 
   publish-revision:
     <<: *defaults
     steps:
-      - attach_workspace:
-          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
-
       - setup_remote_docker
 
-      - run:
-          name: Build the exporter Docker image
-          command: DOCKER_TAG=$CIRCLE_SHA1 make build
+      - attach_workspace:
+            at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
 
       - run:
           name: Login to the Docker repository
-          command: echo $DOCKER_REGISTRY_PASSWORD | docker login nexus.in.ft.com:5000 --username $DOCKER_REGISTRY_USERNAME --password-stdin
+          command: echo "$DOCKER_REGISTRY_PASSWORD" | docker login nexus.in.ft.com:5000 --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
 
       - run:
           name: Push the Docker image
-          command: DOCKER_TAG=$CIRCLE_SHA1 make publish
+          command: |
+            docker load -i "caches/docker-cache-$CIRCLE_SHA1.tar"
+            DOCKER_TAG="$CIRCLE_SHA1" make publish
 
-  publish-latest:
-    <<: *defaults
+  deploy-service:
+    docker:
+      - image: circleci/python:3.6.6
     steps:
       - attach_workspace:
-          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
-
-      - setup_remote_docker
+          at: ~/project
 
       - run:
-          name: Build the exporter Docker image
-          command: DOCKER_TAG=latest make build
+          name: Install AWS CLI
+          command: sudo pip install awscli
+
+      # TODO: add tests for service responsiveness before rolling out multi-region
+      - run:
+          name: Update cloudformation stack eu-west-1
+          command: DOCKER_TAG="$CIRCLE_SHA1" .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy-stack
+          environment:
+            AWS_DEFAULT_REGION: eu-west-1
 
       - run:
-          name: Login to the Docker repository
-          command: echo $DOCKER_REGISTRY_PASSWORD | docker login nexus.in.ft.com:5000 --username $DOCKER_REGISTRY_USERNAME --password-stdin
-
-      - run:
-          name: Push the Docker image
-          command: DOCKER_TAG=latest make publish
+          name: Update cloudformation stack us-east-1
+          command: DOCKER_TAG="$CIRCLE_SHA1" .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy-stack
+          environment:
+            AWS_DEFAULT_REGION: us-east-1
 
 workflows:
   version: 2
-  workflow:
+  build-and-deploy:
     jobs:
-      - verify
-
+      - install
+      - verify:
+          requires:
+            - install
+      - build-image:
+          context: monitoring-agg-ecs-prod
+          requires:
+            - install
       - publish-revision:
+          context: monitoring-agg-ecs-prod
           requires:
             - verify
+            - build-image
           filters:
             branches:
-              only: master
+              only:
+                - master
+      - deploy-service:
+          context: monitoring-agg-ecs-prod
+          requires:
+            - publish-revision
+          filters:
+            branches:
+              only:
+                - master
 
-      - publish-latest:
-          requires:
-            - verify
-          filters:
-            branches:
-              only: master
+experimental:
+  notify:
+    branches:
+      only:
+        - master
