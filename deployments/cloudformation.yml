@@ -34,6 +34,9 @@ Resources:
       ContainerDefinitions:
         - Name: !Sub "${ServiceName}-service"
           Image: !Sub "nexus.in.ft.com:5000/operations-reliability/${ServiceName}:${DockerRevision}"
+          Environment:
+            - Name: PORT
+              Value: !Ref ServiceHttpPort
           PortMappings:
             - ContainerPort: !Ref ServiceHttpPort
           DockerLabels:

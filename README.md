@@ -56,4 +56,4 @@ Currently no environment variables are defined on the CircleCI project. Any in u
 
 Use the Makefile to locally test your changes. The 'make build' command will create a new local docker image, then the 'make run' command will execute these changes locally.
 
-Go to `http://localhost:9942/` (or the port specifed on the `make run` command) on your browser to see the index page for the exporter.
+Go to `http://localhost:8080/` (or the port specifed on the `make run` command) on your browser to see the index page for the exporter.

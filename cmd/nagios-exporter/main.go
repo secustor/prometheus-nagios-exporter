@@ -20,7 +20,7 @@ func main() {
 	replacer := strings.NewReplacer("-", "_")
 	viper.SetEnvKeyReplacer(replacer)
 
-	pflag.IntP("port", "p", 9742, "Port to listen on")
+	pflag.IntP("port", "p", 8080, "Port to listen on")
 	pflag.BoolP("verbose", "v", false, "Enable more detailed logging.")
 	pflag.Parse()
 
