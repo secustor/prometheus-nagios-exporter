@@ -67,6 +67,7 @@ set -o pipefail
 
     branch=""
     tag=""
+    job=""
     rest=()
     api_url="https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME?circle-token=$CIRCLE_TOKEN&limit=100"
 
