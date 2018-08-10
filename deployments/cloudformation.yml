@@ -18,6 +18,11 @@ Parameters:
     Type: String
     Default: "prometheus-nagios-exporter"
 
+  ParentClusterStackName:
+    Type: String
+    Description: The parent CF stack which contains the ECS cluster definition.
+    Default: mon-agg-ecs
+
   ServiceHttpPort:
     Description: >
       The port to route http traffic from external sources, via the ALB.
@@ -58,7 +63,8 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: ListenerRule
     Properties:
-      Cluster: !ImportValue "Prometheus-ECS-Cluster-Name"
+      Cluster:
+        Fn::ImportValue: !Sub "${ParentClusterStackName}-Name"
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: 1
       DeploymentConfiguration:
@@ -73,7 +79,8 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      VpcId: !ImportValue "Prometheus-ECS-Cluster-VPC"
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentClusterStackName}-VPC"
       Port: 80
       Protocol: HTTP
       Matcher:
@@ -89,7 +96,8 @@ Resources:
   ListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      ListenerArn:
+        Fn::ImportValue: !Sub "${ParentClusterStackName}-HTTPS-Listener-Arn"
       # Should be within a 100 width range. See https://github.com/Financial-Times/monitoring-aggregation-ecs/blob/master/documentation/SERVICE_DEFINITIONS.md for guidelines
       Priority: 200
       Conditions:
@@ -103,7 +111,8 @@ Resources:
   RegionalListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !ImportValue "Prometheus-ECS-Cluster-HTTPS-Listener-Arn"
+      ListenerArn:
+        Fn::ImportValue: !Sub "${ParentClusterStackName}-HTTPS-Listener-Arn"
       # Should be within a 100 width range. See https://github.com/Financial-Times/monitoring-aggregation-ecs/blob/master/documentation/SERVICE_DEFINITIONS.md for guidelines
       Priority: 201
       Conditions:
