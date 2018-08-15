@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -11,14 +12,28 @@ import (
 )
 
 type nagiosCollector struct {
-	target   string
-	status   *prometheus.Desc
-	duration *prometheus.Desc
+	netClient *http.Client
+	target    string
+	status    *prometheus.Desc
+	duration  *prometheus.Desc
 }
 
 func NewNagiosCollector(target string) *nagiosCollector {
+	var netTransport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: 5 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 5 * time.Second,
+	}
+
+	var netClient = &http.Client{
+		Transport: netTransport,
+		Timeout:   time.Second * 15,
+	}
+
 	return &nagiosCollector{
-		target: target,
+		netClient: netClient,
+		target:    target,
 		status: prometheus.NewDesc(
 			"nagios_host_status",
 			"Status of a host monitored by Nagios, 0 is OK.",
@@ -39,8 +54,8 @@ func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.duration
 }
 
-func Scrape(target string) (map[string]float64, error) {
-	res, err := http.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1", target))
+func Scrape(netClient *http.Client, target string) (map[string]float64, error) {
+	res, err := netClient.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1", target))
 
 	if err != nil {
 		return nil, err
@@ -48,7 +63,7 @@ func Scrape(target string) (map[string]float64, error) {
 
 	defer res.Body.Close()
 
-	doument, err := goquery.NewDocumentFromReader(res.Body)
+	document, err := goquery.NewDocumentFromReader(res.Body)
 
 	if err != nil {
 		return nil, err
@@ -58,7 +73,7 @@ func Scrape(target string) (map[string]float64, error) {
 
 	instances := make(map[string]float64)
 
-	table := doument.Find("table.status > tbody > tr")
+	table := document.Find("table.status > tbody > tr")
 
 	// body > p > table.status > tbody > tr:nth-child(8) > td.statusEven > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a
 	for i := range table.Nodes {
@@ -99,7 +114,7 @@ func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 	// Fetch and record the health check results.
 	start := time.Now()
 
-	hosts, err := Scrape(collector.target)
+	hosts, err := Scrape(collector.netClient, collector.target)
 
 	// If the request failed, bubble the error up so it's reported in Prometheus.
 	if err != nil {
