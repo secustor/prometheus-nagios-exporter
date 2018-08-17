@@ -6,37 +6,40 @@
 
 Prometheus asks this exporter for metrics, one Nagios target at a time.
 
+The timeout for this exporter is 15 seconds, rather than the normal 10 seconds for Prometheus Exporters
+
 ### Prometheus Configuration
 
 ```yaml
 - job_name: nagios_exporter
   scheme: https
   static_configs:
-    - targets:
-      - prometheus-nagios-exporter-eu-west-1.in.ft.com
-      - prometheus-nagios-exporter-us-east-1.in.ft.com
-      labels:
-        system: prometheus-nagios-exporter
-        observe: yes
+      - targets:
+            - prometheus-nagios-exporter-eu-west-1.in.ft.com
+            - prometheus-nagios-exporter-us-east-1.in.ft.com
+        labels:
+            system: prometheus-nagios-exporter
+            observe: yes
 
 - job_name: nagios
   scheme: https
   metrics_path: /collect
+  scrape_timeout: 15s
   static_configs:
-    - targets:
-      - 10.0.0.1
-      - 10.0.0.2
-      - 10.0.0.3
-      labels:
-        observe: yes
-        system: an-example-system-code
+      - targets:
+            - 10.0.0.1
+            - 10.0.0.2
+            - 10.0.0.3
+        labels:
+            observe: yes
+            system: an-example-system-code
   relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_instance
-    - source_labels: [__address__]
-      target_label: instance
-    - target_label: __address__
-      replacement: prometheus-nagios-exporter.in.ft.com
+      - source_labels: [__address__]
+        target_label: __param_instance
+      - source_labels: [__address__]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-nagios-exporter.in.ft.com
 ```
 
 ## Development

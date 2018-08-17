@@ -18,7 +18,7 @@ type nagiosCollector struct {
 	duration  *prometheus.Desc
 }
 
-func NewNagiosCollector(target string) *nagiosCollector {
+func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 	var netTransport = &http.Transport{
 		Dial: (&net.Dialer{
 			Timeout: 5 * time.Second,
@@ -28,7 +28,7 @@ func NewNagiosCollector(target string) *nagiosCollector {
 
 	var netClient = &http.Client{
 		Transport: netTransport,
-		Timeout:   time.Second * 15,
+		Timeout:   timeOut,
 	}
 
 	return &nagiosCollector{

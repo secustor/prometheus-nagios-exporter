@@ -26,18 +26,18 @@ func Collect() http.Handler {
 			return
 		}
 
-		// Set a default timeout of 10 seconds.
-		var timeout float64 = 10
+		// Set a default timeout of 15 seconds.
+		var timeout float64 = 15
 
 		// Offset to subtract from timeout in seconds, ensures this exporter will respond to Prometheus requests.
-		timeout -= 0.5
+		var hardTimeout = timeout - 0.5
 
 		// Add the timeout to this request.
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout*float64(time.Second)))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(hardTimeout*float64(time.Second)))
 		defer cancel()
 		r = r.WithContext(ctx)
 
-		collector := collectors.NewNagiosCollector(instance)
+		collector := collectors.NewNagiosCollector(instance, time.Duration((timeout-1)*float64(time.Second)))
 		registry := prometheus.NewPedanticRegistry()
 		registry.MustRegister(collector)
 
