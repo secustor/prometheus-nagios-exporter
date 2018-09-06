@@ -46,6 +46,7 @@ Resources:
           DockerLabels:
             com.ft.service-name: !Sub "${ServiceName}-service"
             com.ft.service-region: !Ref "AWS::Region"
+            com.prometheus-ecs-discovery.port: !Ref ServiceHttpPort
           MemoryReservation: 256
           LogConfiguration:
             LogDriver: splunk
