@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/Financial-Times/prometheus-nagios-exporter/internal/server"
 	"github.com/spf13/pflag"
@@ -43,7 +44,8 @@ func main() {
 	go func() {
 		quit := make(chan os.Signal, 1)
 
-		signal.Notify(quit, os.Interrupt)
+		signal.Notify(quit, syscall.SIGTERM)
+		signal.Notify(quit, syscall.SIGINT)
 
 		<-quit
 
