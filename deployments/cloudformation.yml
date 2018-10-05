@@ -43,6 +43,10 @@ Resources:
               Value: !Ref ServiceHttpPort
           PortMappings:
             - ContainerPort: !Ref ServiceHttpPort
+          DnsServers:
+            - 10.117.104.41
+            - 10.118.104.41
+            - 10.116.4.41
           DockerLabels:
             com.ft.service-name: !Sub "${ServiceName}-service"
             com.ft.service-region: !Ref "AWS::Region"
