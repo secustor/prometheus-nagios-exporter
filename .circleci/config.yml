@@ -1,29 +1,69 @@
-defaults: &defaults
-  docker:
-    - image: circleci/golang:1.10
-  working_directory: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+version: 2.1
+references:
+  working_directory: &working_directory
+    /go/src/github.com/Financial-Times/prometheus-nagios-exporter
 
-version: 2
-jobs:
-  install:
-    <<: *defaults
+executors:
+  golang:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: *working_directory
+  golang-node:
+    docker:
+      - image: circleci/golang:1.11-node
+    working_directory: *working_directory
+  python-node:
+    docker:
+      - image: circleci/python-node:3.6
+    working_directory: *working_directory
+
+commands:
+  install_dependencies:
+    parameters:
+      working_directory:
+        type: string
+        description: 'The working directory containing the golang project, containing the vendor folder and Gopkg.lock lockfile'
     steps:
-      - checkout
-
       - restore_cache:
           key: v1-gopkg-{{ checksum "Gopkg.lock" }}
 
       - run:
           name: Install dependencies
           command: |
-            if [ ! -d  /go/src/github.com/Financial-Times/prometheus-nagios-exporter/vendor ]; then
+            if [ ! -d  << parameters.working_directory >>/vendor ]; then
                 dep ensure
             fi
 
       - save_cache:
           key: v1-gopkg-{{ checksum "Gopkg.lock" }}
           paths:
-            -  /go/src/github.com/Financial-Times/prometheus-nagios-exporter/vendor
+            -  << parameters.working_directory >>/vendor
+
+  attach_golang_workspace:
+    steps:
+      - attach_workspace:
+          at: *working_directory
+
+  docker_login:
+    steps:
+      - run:
+          name: Login to the Docker repository
+          command: echo "$DOCKER_REGISTRY_PASSWORD" | docker login nexus.in.ft.com:5000 --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
+
+  install_snyk:
+    steps:
+      - run:
+          name: Install snyk
+          command: sudo npm install -g snyk
+
+jobs:
+  install:
+    executor: golang
+    steps:
+      - checkout
+
+      - install_dependencies:
+          working_directory: *working_directory
 
       - persist_to_workspace:
           root: .
@@ -31,10 +71,9 @@ jobs:
             - .
 
   verify:
-    <<: *defaults
+    executor: golang
     steps:
-      - attach_workspace:
-            at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+      - attach_golang_workspace
 
       - run:
           name: Check the style
@@ -44,17 +83,19 @@ jobs:
           name: Vet the code
           command: make vet
 
+      - run:
+          name: Test the code
+          command: make test-report
+
+      - store_test_results:
+          path: test-results
+
   build-image:
-    <<: *defaults
+    executor: golang
     steps:
       - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
-
-      - run:
-          name: Login to the Docker repository
-          command: echo "$DOCKER_REGISTRY_PASSWORD" | docker login nexus.in.ft.com:5000 --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
+      - attach_golang_workspace
+      - docker_login
 
       - run:
           name: Build the exporter Docker image if it does not exist
@@ -76,17 +117,25 @@ jobs:
           paths:
             - .
 
-  publish-revision:
-    <<: *defaults
+  security:
+    executor: golang-node
     steps:
       - setup_remote_docker
-
-      - attach_workspace:
-            at: /go/src/github.com/Financial-Times/prometheus-nagios-exporter
+      - attach_golang_workspace
+      - install_snyk
 
       - run:
-          name: Login to the Docker repository
-          command: echo "$DOCKER_REGISTRY_PASSWORD" | docker login nexus.in.ft.com:5000 --username "$DOCKER_REGISTRY_USERNAME" --password-stdin
+          name: Check dependencies and docker images for vulnerabilities
+          command: |
+            docker load -i "caches/docker-cache-$CIRCLE_SHA1.tar"
+            make security
+
+  publish-revision:
+    executor: golang
+    steps:
+      - setup_remote_docker
+      - attach_golang_workspace
+      - docker_login
 
       - run:
           name: Push the Docker image
@@ -95,11 +144,9 @@ jobs:
             DOCKER_TAG="$CIRCLE_SHA1" make publish
 
   deploy-service:
-    docker:
-      - image: circleci/python:3.6.6
+    executor: python-node
     steps:
-      - attach_workspace:
-          at: ~/project
+      - attach_golang_workspace
 
       - run:
           name: Install AWS CLI
@@ -118,8 +165,14 @@ jobs:
           environment:
             AWS_DEFAULT_REGION: us-east-1
 
+      - install_snyk
+
+      - run:
+          name: Update snyk monitoring
+          command: DOCKER_TAG="$CIRCLE_SHA1" make security-monitor
+
 workflows:
-  version: 2
+  version: 2.1
   build-and-deploy:
     jobs:
       - install
@@ -130,11 +183,17 @@ workflows:
           context: monitoring-agg-ecs-prod
           requires:
             - install
+      - security:
+          context: monitoring-agg-ecs-prod
+          requires:
+            - install
+            - build-image
       - publish-revision:
           context: monitoring-agg-ecs-prod
           requires:
             - verify
             - build-image
+            - security
           filters:
             branches:
               only:
