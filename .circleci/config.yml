@@ -14,7 +14,7 @@ executors:
     working_directory: *working_directory
   python-node:
     docker:
-      - image: circleci/python-node:3.7-stretch-node-browsers
+      - image: circleci/python:3.7-node
     working_directory: *working_directory
 
 commands:
