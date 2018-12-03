@@ -12,10 +12,12 @@ import (
 )
 
 type nagiosCollector struct {
-	netClient *http.Client
-	target    string
-	status    *prometheus.Desc
-	duration  *prometheus.Desc
+	netClient  *http.Client
+	target     string
+	status     *prometheus.Desc
+	hostStatus *prometheus.Desc
+	duration   *prometheus.Desc
+	up         *prometheus.Desc
 }
 
 func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
@@ -36,13 +38,25 @@ func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 		target:    target,
 		status: prometheus.NewDesc(
 			"nagios_host_status",
-			"Status of a host monitored by Nagios, 0 is OK.",
+			"To be Removed. Status of a host monitored by Nagios, 0 is OK.",
+			[]string{"host"},
+			nil,
+		),
+		hostStatus: prometheus.NewDesc(
+			"nagios_host_ok",
+			"Status of a host monitored by Nagios, 1 is OK.",
 			[]string{"host"},
 			nil,
 		),
 		duration: prometheus.NewDesc(
 			"nagios_request_duration_seconds",
-			"How long the exporter took to scrape the health check endpoint.",
+			"How long the exporter took to scrape the Nagios host.",
+			nil,
+			nil,
+		),
+		up: prometheus.NewDesc(
+			"nagios_up",
+			"Whether the last Nagios scrape was successful (1:up, 0:down) ",
 			nil,
 			nil,
 		),
@@ -51,7 +65,9 @@ func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 
 func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.status
+	ch <- collector.hostStatus
 	ch <- collector.duration
+	ch <- collector.up
 }
 
 func Scrape(netClient *http.Client, target string) (map[string]float64, error) {
@@ -93,16 +109,15 @@ func Scrape(netClient *http.Client, target string) (map[string]float64, error) {
 		if name == "" {
 			continue
 		}
-
 		var status float64
 		switch node.Find("td:nth-of-type(3)").Text() {
 		case "OK":
-			status = 0
-		default:
 			status = 1
+		default:
+			status = 0
 		}
 
-		if val, exists := instances[instance]; !exists || val == 0 {
+		if val, exists := instances[instance]; !exists || val == 1 {
 			instances[instance] = status
 		}
 	}
@@ -116,15 +131,17 @@ func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 
 	hosts, err := Scrape(collector.netClient, collector.target)
 
-	// If the request failed, bubble the error up so it's reported in Prometheus.
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event":    "ERROR_NAGIOS_SCRAPE",
 			"instance": collector.target,
 		}).Error(err)
 
-		ch <- prometheus.NewInvalidMetric(nil, err)
-
+		ch <- prometheus.MustNewConstMetric(
+			collector.up,
+			prometheus.GaugeValue,
+			float64(0),
+		)
 		return
 	}
 
@@ -136,11 +153,31 @@ func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 		duration,
 	)
 
+	ch <- prometheus.MustNewConstMetric(
+		collector.up,
+		prometheus.GaugeValue,
+		float64(1),
+	)
+	var oldStatus float64
 	for host, status := range hosts {
+
+		if status == 1 {
+			oldStatus = 0
+		} else {
+			oldStatus = 1
+		}
+
+		ch <- prometheus.MustNewConstMetric(
+			collector.hostStatus,
+			prometheus.GaugeValue,
+			status,
+			host,
+		)
+
 		ch <- prometheus.MustNewConstMetric(
 			collector.status,
 			prometheus.GaugeValue,
-			status,
+			oldStatus,
 			host,
 		)
 	}

@@ -8,6 +8,22 @@ Prometheus asks this exporter for metrics, one Nagios target at a time.
 
 The timeout for this exporter is 15 seconds, rather than the normal 10 seconds for Prometheus Exporters
 
+## Exported Metrics
+
+### `nagios_host_ok`
+
+Labels `host`, type Gauge
+
+Info about each Nagios host monitored, and whether they have a failing check (0 == failing check)
+
+### `nagios_request_duration_seconds`
+
+How long the exporter took to scrape the Nagios hosts status?
+
+### `nagios_up`
+
+Whether the last nagios scrape was successful (1: up, 0: down).
+
 ### Prometheus Configuration
 
 ```yaml
@@ -59,4 +75,4 @@ Currently no environment variables are defined on the CircleCI project. Any in u
 
 Use the Makefile to locally test your changes. The 'make build' command will create a new local docker image, then the 'make run' command will execute these changes locally.
 
-Go to `http://localhost:8080/` (or the port specifed on the `make run` command) on your browser to see the index page for the exporter.
+Go to `http://localhost:8080/` (or the port specified on the `make run` command) on your browser to see the index page for the exporter.
