@@ -1,6 +1,6 @@
 # prometheus-nagios-exporter
 
-![CircleCI](https://img.shields.io/circleci/project/github/Financial-Times/prometheus-nagios-exporter/master.svg)
+[![CircleCI](https://circleci.com/gh/Financial-Times/prometheus-nagios-exporter.svg?style=svg&circle-token=4c5da94f7bc52bf32b644957a28aca07c3385282)](https://circleci.com/gh/Financial-Times/prometheus-nagios-exporter)
 
 🆙 Prometheus exporter that scrapes a Nagios status pages for alerts.
 
