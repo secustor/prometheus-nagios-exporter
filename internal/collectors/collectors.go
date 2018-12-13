@@ -14,7 +14,6 @@ import (
 type nagiosCollector struct {
 	netClient  *http.Client
 	target     string
-	status     *prometheus.Desc
 	hostStatus *prometheus.Desc
 	duration   *prometheus.Desc
 	up         *prometheus.Desc
@@ -36,12 +35,6 @@ func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 	return &nagiosCollector{
 		netClient: netClient,
 		target:    target,
-		status: prometheus.NewDesc(
-			"nagios_host_status",
-			"To be Removed. Status of a host monitored by Nagios, 0 is OK.",
-			[]string{"host"},
-			nil,
-		),
 		hostStatus: prometheus.NewDesc(
 			"nagios_host_ok",
 			"Status of a host monitored by Nagios, 1 is OK.",
@@ -64,7 +57,6 @@ func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 }
 
 func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- collector.status
 	ch <- collector.hostStatus
 	ch <- collector.duration
 	ch <- collector.up
@@ -158,26 +150,12 @@ func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 		prometheus.GaugeValue,
 		float64(1),
 	)
-	var oldStatus float64
 	for host, status := range hosts {
-
-		if status == 1 {
-			oldStatus = 0
-		} else {
-			oldStatus = 1
-		}
 
 		ch <- prometheus.MustNewConstMetric(
 			collector.hostStatus,
 			prometheus.GaugeValue,
 			status,
-			host,
-		)
-
-		ch <- prometheus.MustNewConstMetric(
-			collector.status,
-			prometheus.GaugeValue,
-			oldStatus,
 			host,
 		)
 	}
