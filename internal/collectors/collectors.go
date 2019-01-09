@@ -63,7 +63,7 @@ func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func Scrape(netClient *http.Client, target string) (map[string]float64, error) {
-	res, err := netClient.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1", target))
+	res, err := netClient.Get(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?host=all&embedded=1&noheader=1&limit=all", target))
 
 	if err != nil {
 		return nil, err
