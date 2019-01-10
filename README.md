@@ -10,9 +10,9 @@ The timeout for this exporter is 15 seconds, rather than the normal 10 seconds f
 
 ## Exported Metrics
 
-### `nagios_host_ok`
+### `nagios_check_ok`
 
-Labels `host`, type Gauge
+Labels `host`, `check_id`, `state`, `notify`, `acknowledged`, type Gauge
 
 Info about each Nagios host monitored, and whether they have a failing check (0 == failing check)
 

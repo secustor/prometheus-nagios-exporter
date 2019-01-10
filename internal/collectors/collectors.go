@@ -53,7 +53,7 @@ func NewNagiosCollector(target string, timeOut time.Duration) *nagiosCollector {
 		checkStatus: prometheus.NewDesc(
 			"nagios_check_ok",
 			"Status of a service on a host monitored by a Nagios instance, 1 is OK.",
-			[]string{"host", "check_id", "state", "notifications", "acknowledged"},
+			[]string{"host", "check_id", "state", "notify", "acknowledged"},
 			nil,
 		),
 		duration: prometheus.NewDesc(
@@ -107,8 +107,8 @@ func Scrape(netClient *http.Client, target string) (map[string]float64, []Label,
 
 		node := table.Eq(i)
 
-		notifications := "enabled"
-		acknowledged := "no"
+		notifications := "true"
+		acknowledged := "false"
 
 		if host := node.Find("td:nth-of-type(1) > table > tbody > tr > td:nth-child(1) > table > tbody > tr > td > a").Text(); host != "" {
 			instance = host
@@ -120,10 +120,10 @@ func Scrape(netClient *http.Client, target string) (map[string]float64, []Label,
 			imageSource, exists := element.Attr("src")
 			if exists {
 				if strings.Contains(imageSource, "/images/ndisabled.gif") {
-					notifications = "disabled"
+					notifications = "false"
 				}
 				if strings.Contains(imageSource, "/images/ack.gif") {
-					acknowledged = "yes"
+					acknowledged = "true"
 				}
 			}
 		})
