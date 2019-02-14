@@ -25,6 +25,9 @@ func Index() http.Handler {
 				<ul>
 					<li><a href="/metrics">/metrics</a></li>
 					<li><a href="/collect?instance=10.170.37.161">/collect?instance=10.170.37.161</a></li>
+					<li><a href="/collect?instance=10.170.37.161&host=access-eu-4.app.ft.com">/collect?instance=10.170.37.161&host=access-eu-4.app.ft.com</a></li>
+					<li><a href="/collect?instance=nagios.dw.in.ft.com&hostgroup=cubes">/collect?instance=nagios.dw.in.ft.com&hostgroup=cubes</a></li>
+					<li><a href="/collect?instance=nagios.dw.in.ft.com&servicegroup=some-service-group">/collect?instance=nagios.dw.in.ft.com&servicegroup=some-service-group</a></li>
 					<li><a href="/__gtg">/__gtg</a></li>
 				</ul>
 			</p>

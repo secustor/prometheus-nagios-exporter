@@ -15,6 +15,9 @@ import (
 func Collect() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		instance := r.URL.Query().Get("instance")
+		host := r.URL.Query().Get("host")
+		hostGroup := r.URL.Query().Get("hostgroup")
+		serviceGroup := r.URL.Query().Get("servicegroup")
 
 		if instance == "" {
 			log.WithFields(log.Fields{
@@ -37,7 +40,14 @@ func Collect() http.Handler {
 		defer cancel()
 		r = r.WithContext(ctx)
 
-		collector := collectors.NewNagiosCollector(instance, time.Duration((timeout-1)*float64(time.Second)))
+		target := collectors.Target{
+			NagiosInstance: instance,
+			Host:           host,
+			HostGroup:      hostGroup,
+			ServiceGroup:   serviceGroup,
+		}
+
+		collector := collectors.NewNagiosCollector(target, time.Duration((timeout-1)*float64(time.Second)))
 		registry := prometheus.NewPedanticRegistry()
 		registry.MustRegister(collector)
 

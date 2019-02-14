@@ -37,6 +37,10 @@ Whether the last nagios scrape was successful (1: up, 0: down).
             system: prometheus-nagios-exporter
             observe: yes
 
+
+# optional '__meta_nagios_param_host/__meta_nagios_param_hostgroup/__meta_nagios_param_servicegroup' labels passed to the nagios status page
+# useful when a host/hostgroup/servicegroup maps to a different label set on the same instance
+# multiple parameters are not supported and may produce unexpected results
 - job_name: nagios
   scheme: https
   metrics_path: /collect
@@ -44,15 +48,42 @@ Whether the last nagios scrape was successful (1: up, 0: down).
   static_configs:
       - targets:
             - 10.0.0.1
-            - 10.0.0.2
-            - 10.0.0.3
         labels:
             observe: yes
             system: an-example-system-code
+      - targets:
+            - 10.0.0.2
+        labels:
+            observe: yes
+            system: an-example-system-code
+            __meta_nagios_param_host: specific-host-to-label
+      - targets:
+            - 10.0.0.2
+        labels:
+            observe: yes
+            system: an-example-system-code
+            __meta_nagios_param_host: other-host-to-label
+      - targets:
+            - 10.0.0.3
+        labels:
+            observe: yes
+            system: some-system-1
+            __meta_nagios_param_hostgroup: some-nagios-host-group
+      - targets:
+            - 10.0.0.4
+        labels:
+            observe: yes
+            system: some-system-2
+            __meta_nagios_param_servicegroup: some-nagios-service-group
   relabel_configs:
       - source_labels: [__address__]
+        replace: (.*?)[#?].*?
+        replacement: $1
         target_label: __param_instance
-      - source_labels: [__address__]
+      - action: labelmap
+        regex: __meta_nagios_param_(.*)
+        replacement: __param_$1
+      - source_labels: [__param_instance]
         target_label: instance
       - target_label: __address__
         replacement: prometheus-nagios-exporter.in.ft.com
