@@ -77,7 +77,7 @@ Whether the last nagios scrape was successful (1: up, 0: down).
             __meta_nagios_param_servicegroup: some-nagios-service-group
   relabel_configs:
       - source_labels: [__address__]
-        replace: (.*?)[#?].*?
+        regex: (.*?)[#?].*?
         replacement: $1
         target_label: __param_instance
       - action: labelmap
