@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Financial-Times/prometheus-nagios-exporter/internal/collectors"
@@ -12,6 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const prometheusTimeoutHeader string = "X-Prometheus-Scrape-Timeout-Seconds"
+const defaultTimeOut float64 = 15
+
+// Collect uses the given scraper to scrape a nagios check and returns the results in Prometheus' exposition format.
+// The scrape is required to finish in the timeout set by Prometheus ("X-Prometheus-Scrape-Timeout-Seconds") otherwise an error is returned.
 func Collect() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		instance := r.URL.Query().Get("instance")
@@ -29,14 +35,30 @@ func Collect() http.Handler {
 			return
 		}
 
-		// Set a default timeout of 15 seconds.
-		var timeout float64 = 15
+		timeout, err := strconv.ParseFloat(r.Header.Get(prometheusTimeoutHeader), 64)
+		if err != nil {
+			timeout = defaultTimeOut
+			log.WithError(err).WithFields(log.Fields{
+				"event":          "MISSING_PROMETHEUS_TIMEOUT_HEADER",
+				"defaultTimeout": defaultTimeOut,
+			}).Warnf("Missing header: \"%s\"", prometheusTimeoutHeader)
+		}
+		hardTimeoutSeconds := timeout - 0.5
+		if hardTimeoutSeconds <= 0 {
+			log.WithError(err).WithFields(log.Fields{
+				"event":          "NEGATIVE_TIMEOUT",
+				"defaultTimeout": defaultTimeOut,
+				"timeout":        timeout,
+				"hardTimeout":    hardTimeoutSeconds,
+			}).Warnf("Calculated scrape timeout was negative. Using to default timeout")
+			hardTimeoutSeconds = defaultTimeOut - 0.5
+		}
 
 		// Offset to subtract from timeout in seconds, ensures this exporter will respond to Prometheus requests.
-		var hardTimeout = timeout - 0.5
+		hardTimeout := time.Duration(hardTimeoutSeconds * float64(time.Second))
 
 		// Add the timeout to this request.
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(hardTimeout*float64(time.Second)))
+		ctx, cancel := context.WithTimeout(context.Background(), hardTimeout)
 		defer cancel()
 		r = r.WithContext(ctx)
 
@@ -51,7 +73,9 @@ func Collect() http.Handler {
 		registry := prometheus.NewPedanticRegistry()
 		registry.MustRegister(collector)
 
-		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{
+			Timeout: hardTimeout,
+		})
 		handler.ServeHTTP(w, r)
 	})
 }
