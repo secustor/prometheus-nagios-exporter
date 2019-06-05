@@ -55,11 +55,10 @@ func Collect(httpClient *http.Client) http.Handler {
 		}
 
 		// Offset to subtract from timeout in seconds, ensures this exporter will respond to Prometheus requests.
-		hardTimeout := time.Duration(hardTimeoutSeconds * float64(time.Second))
+		hardTimeout := time.Duration(hardTimeoutSeconds) * time.Second
 
 		// Offset substracted from the work timeout to allow work to finish before promhttp returns a 500
-		workTimeoutSeconds := hardTimeoutSeconds - 0.1
-		workTimeout := time.Second * time.Duration(workTimeoutSeconds)
+		workTimeout := hardTimeout - time.Duration(100)*time.Millisecond
 
 		// Add the timeout to this request.
 		ctx, cancel := context.WithTimeout(context.Background(), workTimeout)
