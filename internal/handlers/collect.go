@@ -58,7 +58,7 @@ func Collect(httpClient *http.Client) http.Handler {
 		hardTimeout := time.Duration(hardTimeoutSeconds) * time.Second
 
 		// Offset substracted from the work timeout to allow work to finish before promhttp returns a 500
-		workTimeout := hardTimeout - time.Duration(500)*time.Millisecond
+		workTimeout := time.Duration(hardTimeoutSeconds-1) * time.Second
 
 		// Add the timeout to this request.
 		ctx, cancel := context.WithTimeout(context.Background(), workTimeout)
