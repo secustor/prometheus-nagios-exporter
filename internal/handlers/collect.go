@@ -58,12 +58,11 @@ func Collect(httpClient *http.Client) http.Handler {
 		hardTimeout := time.Duration(hardTimeoutSeconds) * time.Second
 
 		// Offset substracted from the work timeout to allow work to finish before promhttp returns a 500
-		workTimeout := time.Duration(hardTimeoutSeconds-2) * time.Second
+		workTimeout := hardTimeout - 50*time.Millisecond
 
 		// Add the timeout to this request.
 		ctx, cancel := context.WithTimeout(context.Background(), workTimeout)
 		defer cancel()
-		r = r.WithContext(ctx)
 
 		target := collectors.Target{
 			NagiosInstance: instance,
