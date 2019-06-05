@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.11
+ARG GO_VERSION=1.12
 
 FROM golang:${GO_VERSION}-alpine AS build
 
@@ -35,7 +35,7 @@ LABEL maintainer="reliability.engineering@ft.com" \
     org.opencontainers.revision="$VCS_SHA" \
     org.opencontainers.title="prometheus-nagios-exporter" \
     org.opencontainers.source="https://github.com/Financial-Times/prometheus-nagios-exporter" \
-    org.opencontainers.url="https://dewey.in.ft.com/view/system/prometheus-nagios-exporter" \
+    org.opencontainers.url="https://biz-ops.in.ft.com/System/prometheus-nagios-exporter" \
     org.opencontainers.vendor="financial-times"
 
 CMD ["/root/nagios-exporter"]

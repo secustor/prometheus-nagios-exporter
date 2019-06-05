@@ -6,11 +6,11 @@ references:
 executors:
   golang:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: *working_directory
   golang-node:
     docker:
-      - image: circleci/golang:1.11-node
+      - image: circleci/golang:1.12-node
     working_directory: *working_directory
   python-node:
     docker:

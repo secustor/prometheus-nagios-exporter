@@ -1,8 +1,9 @@
 package collectors
 
 import (
+	"context"
 	"fmt"
-	"net"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +15,7 @@ import (
 )
 
 type nagiosCollector struct {
+	ctx         context.Context
 	netClient   *http.Client
 	target      Target
 	duration    *prometheus.Desc
@@ -35,24 +37,13 @@ type Target struct {
 	ServiceGroup   string
 }
 
-func NewNagiosCollector(target Target, timeOut time.Duration) *nagiosCollector {
-	var netTransport = &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: 5 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
-	}
-
-	var netClient = &http.Client{
-		Transport: netTransport,
-		Timeout:   timeOut,
-	}
-
+func NewNagiosCollector(ctx context.Context, netClient *http.Client, target Target) *nagiosCollector {
 	if target.Host == "" {
 		target.Host = "all"
 	}
 
 	return &nagiosCollector{
+		ctx:       ctx,
 		netClient: netClient,
 		target:    target,
 		checkStatus: prometheus.NewDesc(
@@ -69,7 +60,7 @@ func NewNagiosCollector(target Target, timeOut time.Duration) *nagiosCollector {
 		),
 		up: prometheus.NewDesc(
 			"nagios_up",
-			"Whether the last Nagios scrape was successful (1:up, 0:down) ",
+			"Whether the last Nagios scrape was successful (1:up, 0:down).",
 			nil,
 			nil,
 		),
@@ -82,37 +73,12 @@ func (collector *nagiosCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.checkStatus
 }
 
-func Scrape(netClient *http.Client, target Target) ([]Label, error) {
+// parseNagiosOutput parses the Nagios HTML response to a slice of Labels
+func parseNagiosOutput(bodyReader io.Reader) ([]Label, error) {
 	var instance string
 	var checks []Label
 
-	nagiosUrl, err := url.Parse(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?embedded=1&noheader=1&limit=all&style=detail", target.NagiosInstance))
-	if err != nil {
-		return nil, err
-	}
-
-	query := nagiosUrl.Query()
-	if target.ServiceGroup != "" {
-		query.Set("servicegroup", target.ServiceGroup)
-	} else {
-		if target.HostGroup != "" {
-			query.Set("hostgroup", target.HostGroup)
-		} else {
-			query.Set("host", target.Host)
-		}
-	}
-
-	nagiosUrl.RawQuery = query.Encode()
-
-	res, err := netClient.Get(nagiosUrl.String())
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer res.Body.Close()
-
-	document, err := goquery.NewDocumentFromReader(res.Body)
+	document, err := goquery.NewDocumentFromReader(bodyReader)
 
 	if err != nil {
 		return nil, err
@@ -177,11 +143,47 @@ func Scrape(netClient *http.Client, target Target) ([]Label, error) {
 	return checks, nil
 }
 
+// scrape scrapes the given target with the given netclient and translates the Nagios output to a set of Prometheus labels.
+func (collector *nagiosCollector) scrape(netClient *http.Client, target Target) ([]Label, error) {
+	nagiosUrl, err := url.Parse(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?embedded=1&noheader=1&limit=all&style=detail", target.NagiosInstance))
+	if err != nil {
+		return nil, err
+	}
+
+	query := nagiosUrl.Query()
+	if target.ServiceGroup != "" {
+		query.Set("servicegroup", target.ServiceGroup)
+	} else {
+		if target.HostGroup != "" {
+			query.Set("hostgroup", target.HostGroup)
+		} else {
+			query.Set("host", target.Host)
+		}
+	}
+
+	nagiosUrl.RawQuery = query.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, nagiosUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("User-Agent", "prometheus-nagios-exporter")
+	res, err := netClient.Do(req.WithContext(collector.ctx))
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	return parseNagiosOutput(res.Body)
+}
+
 func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 	// Fetch all checks per instance/host.
 	start := time.Now()
 
-	checks, err := Scrape(collector.netClient, collector.target)
+	checks, err := collector.scrape(collector.netClient, collector.target)
 
 	if err != nil {
 		log.WithFields(log.Fields{

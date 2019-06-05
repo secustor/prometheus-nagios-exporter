@@ -18,7 +18,7 @@ const defaultTimeOut float64 = 15
 
 // Collect uses the given scraper to scrape a nagios check and returns the results in Prometheus' exposition format.
 // The scrape is required to finish in the timeout set by Prometheus ("X-Prometheus-Scrape-Timeout-Seconds") otherwise an error is returned.
-func Collect() http.Handler {
+func Collect(httpClient *http.Client) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		instance := r.URL.Query().Get("instance")
 		host := r.URL.Query().Get("host")
@@ -69,7 +69,7 @@ func Collect() http.Handler {
 			ServiceGroup:   serviceGroup,
 		}
 
-		collector := collectors.NewNagiosCollector(target, time.Duration((timeout-1)*float64(time.Second)))
+		collector := collectors.NewNagiosCollector(ctx, httpClient, target)
 		registry := prometheus.NewPedanticRegistry()
 		registry.MustRegister(collector)
 

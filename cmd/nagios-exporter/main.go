@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/Financial-Times/prometheus-nagios-exporter/internal/server"
 	"github.com/spf13/pflag"
@@ -36,8 +37,11 @@ func main() {
 	}
 
 	listenAddress := fmt.Sprintf(":%d", viper.GetInt("port"))
-
-	server := server.Server(listenAddress)
+	httpClient := http.Client{
+		// set a lax timeout as Nagios requests can be expected to take ~15 seconds and we use request context cancellation
+		Timeout: time.Second * 20,
+	}
+	server := server.Server(listenAddress, &httpClient)
 
 	done := make(chan bool)
 
