@@ -5,6 +5,8 @@ GREEN = $(shell printf '%b' "\033[0;32m")
 RED = $(shell printf '%b' "\033[0;31m")
 NO_COLOUR = $(shell printf '%b' "\033[m")
 
+GOBIN = $(shell pwd)/bin
+PATH=$$GOBIN:$(shell echo $$PATH)
 PACKAGES = $(shell go list ./... | grep -v /vendor/)
 UPPER_CASE_REPO_NAME = $(shell $(	REPO_NAME) | sed -r 's/\<./\U&/g')
 AWS := $(shell command aws --version 2> /dev/null)
@@ -63,7 +65,7 @@ vet: ## Examine the Go source code.
 
 .PHONY: security
 security: ## Perform security scans. Needs to be run in an environment with the snyk CLI tool.
-security: _security-dependencies _security-docker
+security: _security-dependencies
 
 _security-login:
 
@@ -76,29 +78,20 @@ _security-login: _security-login-web
 endif
 
 _security-dependencies: _security-login ## Scan dependencies for security vulnerabilities.
-	@printf '%b\n' ">> $(TEAL)scanning dependencies for vulnerabilities"
-	npx snyk test --org=reliability-engineering
-	@$(DONE)
-
-_security-docker: _security-login ## Scan docker images for vulnerabilities.
-	@printf '%b\n' ">> $(TEAL)scanning docker images for vulnerabilities"
-	npx snyk test --org=reliability-engineering --docker "financial-times/$(REPO_NAME):$(VCS_SHA)" --file=./Dockerfile
-	@$(DONE)
+	# TODO: enable once snyk support go modules https://github.com/snyk/snyk/issues/354
+	# @printf '%b\n' ">> $(TEAL)scanning dependencies for vulnerabilities"
+	# npx snyk test --org=reliability-engineering
+	# @$(DONE)
 
 .PHONY: security-monitor
 security-monitor: ## Update latest monitored dependencies in snyk. Needs to be run in an environment with the snyk CLI tool.
-security-monitor: _security-dependencies-monitor _security-docker-monitor
+security-monitor: _security-dependencies-monitor
 
 _security-dependencies-monitor: ## Update snyk monitored dependencies.
-	@printf '%b\n' ">> $(TEAL)updating snyk dependencies"
-	npx snyk monitor --org=reliability-engineering
-	@$(DONE)
-
-_security-docker-monitor: ## Update snyk monitored docker image.
-	@printf '%b\n' ">> $(TEAL)updating snyk docker image"
-	docker tag "financial-times/$(REPO_NAME):$(VCS_SHA)" "nexus.in.ft.com:5000/$(DOCKER_TEAM_NAME)/$(REPO_NAME):$(DOCKER_TAG)"
-	npx snyk monitor --org=reliability-engineering --docker "nexus.in.ft.com:5000/$(DOCKER_TEAM_NAME)/$(REPO_NAME):$(DOCKER_TAG)" --file=./Dockerfile
-	@$(DONE)
+	# TODO: enable once snyk support go modules https://github.com/snyk/snyk/issues/354
+	# @printf '%b\n' ">> $(TEAL)updating snyk dependencies"
+	# npx snyk monitor --org=reliability-engineering
+	# @$(DONE)
 
 build: ## Build the Docker image.
 	@printf '%b\n' ">> $(TEAL)building the docker image"
