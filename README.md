@@ -37,7 +37,6 @@ Whether the last nagios scrape was successful (1: up, 0: down).
             system: prometheus-nagios-exporter
             observe: yes
 
-
 # optional '__meta_nagios_param_host/__meta_nagios_param_hostgroup/__meta_nagios_param_servicegroup' labels passed to the nagios status page
 # useful when a host/hostgroup/servicegroup maps to a different label set on the same instance
 # multiple parameters are not supported and may produce unexpected results
@@ -88,6 +87,10 @@ Whether the last nagios scrape was successful (1: up, 0: down).
       - target_label: __address__
         replacement: prometheus-nagios-exporter.in.ft.com
 ```
+
+## Runbook
+
+View [RUNBOOK.md](.//RUNBOOK.md).
 
 ## Development
 
