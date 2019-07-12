@@ -43,7 +43,7 @@ func main() {
 	}
 	server := server.Server(listenAddress, &httpClient)
 
-	ballast := make([]byte, 10<<29)
+	ballast := make([]byte, 10<<30)
 	for i := 0; i < len(ballast); i++ {
 		ballast[i] = byte('A')
 	}
