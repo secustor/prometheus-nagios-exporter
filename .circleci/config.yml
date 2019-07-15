@@ -145,11 +145,11 @@ jobs:
           environment:
             AWS_DEFAULT_REGION: eu-west-1
 
-      # - run:
-      #     name: Update cloudformation stack us-east-1
-      #     command: DOCKER_TAG="$CIRCLE_SHA1" .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy-stack
-      #     environment:
-      #       AWS_DEFAULT_REGION: us-east-1
+      - run:
+          name: Update cloudformation stack us-east-1
+          command: DOCKER_TAG="$CIRCLE_SHA1" .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy-stack
+          environment:
+            AWS_DEFAULT_REGION: us-east-1
 
   security-monitor:
     executor: golang-node

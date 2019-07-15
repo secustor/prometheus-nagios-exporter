@@ -43,19 +43,6 @@ func main() {
 	}
 	server := server.Server(listenAddress, &httpClient)
 
-	go func() {
-		timeout := time.After(time.Duration(2) * time.Minute)
-		select {
-		case <-timeout:
-			fmt.Println("Start allocating 5GB of memory")
-			ballast := make([]byte, 10<<29)
-			for i := 0; i < len(ballast); i++ {
-				ballast[i] = byte('A')
-			}
-			fmt.Println("Done allocating 5GB of memory")
-		}
-	}()
-
 	done := make(chan bool)
 
 	go func() {
