@@ -50,9 +50,9 @@ Resources:
             com.ft.service-name: !Sub "${ServiceName}-service"
             com.ft.service-region: !Ref "AWS::Region"
             com.prometheus-ecs-discovery.port: !Ref ServiceHttpPort
-          Cpu: 20
-          MemoryReservation: 64
-          Memory: 100
+          Cpu: 80
+          MemoryReservation: 32
+          Memory: 96
           LogConfiguration:
             LogDriver: splunk
             Options:
