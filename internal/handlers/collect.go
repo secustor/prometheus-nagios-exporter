@@ -16,6 +16,12 @@ import (
 const prometheusTimeoutHeader string = "X-Prometheus-Scrape-Timeout-Seconds"
 const defaultTimeOut float64 = 15
 
+type promhttpLogger struct{}
+
+func (p *promhttpLogger) Println(v ...interface{}) {
+	log.Error(v...)
+}
+
 // Collect uses the given scraper to scrape a nagios check and returns the results in Prometheus' exposition format.
 // The scrape is required to finish in the timeout set by Prometheus ("X-Prometheus-Scrape-Timeout-Seconds") otherwise an error is returned.
 func Collect(httpClient *http.Client) http.Handler {
@@ -76,7 +82,8 @@ func Collect(httpClient *http.Client) http.Handler {
 		registry.MustRegister(collector)
 
 		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{
-			Timeout: hardTimeout,
+			Timeout:  hardTimeout,
+			ErrorLog: &promhttpLogger{},
 		})
 		handler.ServeHTTP(w, r)
 	})
