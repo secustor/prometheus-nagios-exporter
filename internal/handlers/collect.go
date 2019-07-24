@@ -49,7 +49,7 @@ func Collect(httpClient *http.Client) http.Handler {
 				"defaultTimeout": defaultTimeOut,
 			}).Warnf("Missing header: \"%s\"", prometheusTimeoutHeader)
 		}
-		hardTimeoutSeconds := timeout - 1.0
+		hardTimeoutSeconds := timeout - 1.5
 		if hardTimeoutSeconds <= 0 {
 			log.WithError(err).WithFields(log.Fields{
 				"event":          "NEGATIVE_TIMEOUT",
@@ -57,7 +57,7 @@ func Collect(httpClient *http.Client) http.Handler {
 				"timeout":        timeout,
 				"hardTimeout":    hardTimeoutSeconds,
 			}).Warnf("Calculated scrape timeout was negative. Using to default timeout")
-			hardTimeoutSeconds = defaultTimeOut - 1.0
+			hardTimeoutSeconds = defaultTimeOut - 1.5
 		}
 
 		// Offset to subtract from timeout in seconds, ensures this exporter will respond to Prometheus requests.
