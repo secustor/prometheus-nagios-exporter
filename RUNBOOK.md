@@ -112,11 +112,6 @@ Diagram for the nagios exporter:
 
 Note: This setup is mirrored in `eu-west-1` and `us-east-1` regions.
 
-## Dependents
-
--   [Heimdall UI](https://biz-ops.in.ft.com/System/heimdall-ui)
--   [Prometheus](https://biz-ops.in.ft.com/System/prometheus)
-
 ## Failover Architecture Type
 
 ActiveActive
@@ -155,7 +150,7 @@ Release:
 Rollback:
 
 -   Open CircleCI for this project: [circleci:prometheus-nagios-exporter](https://circleci.com/gh/Financial-Times/workflows/prometheus-nagios-exporter)
--   Find the build of the commit which you wish to roll back to. The commit message is visible, and the `sha` of the commit is displayed to the right.
+-   Find the build of the commit which you wish to roll back to. The commit message is visible, and the `sha` of the commit is displayed to the right
 -   Click on `Rerun`, under the build status for each workflow
 -   Click `Rerun from beginning`
 
