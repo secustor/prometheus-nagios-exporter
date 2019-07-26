@@ -155,7 +155,7 @@ Release:
 Rollback:
 
 -   Open CircleCI for this project: [circleci:prometheus-nagios-exporter](https://circleci.com/gh/Financial-Times/workflows/prometheus-nagios-exporter)
--   Find the build of the commit which you wish to roll back to. The commit message is visible, and the `sha` of the commit is displayed to the right.
+-   Find the build of the commit which you wish to roll back to. The commit message is visible, and the `sha` of the commit is displayed to the right
 -   Click on `Rerun`, under the build status for each workflow
 -   Click `Rerun from beginning`
 
