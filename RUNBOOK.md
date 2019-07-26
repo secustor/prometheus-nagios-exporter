@@ -112,11 +112,6 @@ Diagram for the nagios exporter:
 
 Note: This setup is mirrored in `eu-west-1` and `us-east-1` regions.
 
-## Dependents
-
--   [Heimdall UI](https://biz-ops.in.ft.com/System/heimdall-ui)
--   [Prometheus](https://biz-ops.in.ft.com/System/prometheus)
-
 ## Failover Architecture Type
 
 ActiveActive
