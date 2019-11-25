@@ -191,10 +191,18 @@ workflows:
           context: rel-eng-creds
           requires:
             - deploy-service
+          filters:
+            branches:
+              only:
+                - master
       - ft-snyk-orb/scan-and-monitor-docker-images:
           context: rel-eng-creds
           requires:
             - deploy-service
+          filters:
+            branches:
+              only:
+                - master
 
 experimental:
   notify:
