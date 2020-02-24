@@ -24,7 +24,7 @@ func (p *promhttpLogger) Println(v ...interface{}) {
 
 // Collect uses the given scraper to scrape a nagios check and returns the results in Prometheus' exposition format.
 // The scrape is required to finish in the timeout set by Prometheus ("X-Prometheus-Scrape-Timeout-Seconds") otherwise an error is returned.
-func Collect(httpClient *http.Client) http.Handler {
+func Collect(httpClient *http.Client, basicAuthUsername string, basicAuthPassword string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		instance := r.URL.Query().Get("instance")
 		host := r.URL.Query().Get("host")
@@ -71,12 +71,16 @@ func Collect(httpClient *http.Client) http.Handler {
 		ctx, cancel := context.WithTimeout(context.Background(), workTimeout)
 		defer cancel()
 
+		var basicAuth = collectors.BasicAuth{}
+		basicAuth.Username = basicAuthUsername
+		basicAuth.Password = basicAuthPassword
 		target := collectors.Target{
 			NagiosInstance: instance,
 			Host:           host,
 			HostGroup:      hostGroup,
 			ServiceGroup:   serviceGroup,
 			Protocol:       protocol,
+			BasicAuth:      basicAuth,
 		}
 
 		collector := collectors.NewNagiosCollector(ctx, httpClient, target)

@@ -10,13 +10,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Server(listenAddress string, httpClient *http.Client) *http.Server {
+func Server(listenAddress string, httpClient *http.Client, basicAuthUsername string, basicAuthPassword string) *http.Server {
 	router := http.NewServeMux()
 
 	router.Handle("/", handlers.Index())
 	router.Handle("/__gtg", handlers.GoodToGo())
 	router.Handle("/metrics", promhttp.Handler())
-	router.Handle("/collect", handlers.Collect(httpClient))
+	router.Handle("/collect", handlers.Collect(httpClient, basicAuthUsername, basicAuthPassword))
 
 	logger := logrus.New()
 	w := logger.Writer()

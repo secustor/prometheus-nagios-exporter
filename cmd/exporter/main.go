@@ -24,6 +24,8 @@ func main() {
 
 	pflag.IntP("port", "p", 8080, "Port to listen on")
 	pflag.BoolP("verbose", "v", false, "Enable more detailed logging.")
+	pflag.StringP("username", "U", "", "(optional) username for basic auth")
+	pflag.StringP("password", "P", "", "(optional) password for basic auth")
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
@@ -36,12 +38,17 @@ func main() {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
 
+	var username, password string
+	if viper.GetString("username") != "" && viper.GetString("password") != "" {
+		username = viper.GetString("username")
+		password = viper.GetString("password")
+	}
 	listenAddress := fmt.Sprintf(":%d", viper.GetInt("port"))
 	httpClient := http.Client{
 		// set a lax timeout as Nagios requests can be expected to take ~15 seconds and we use request context cancellation
 		Timeout: time.Second * 20,
 	}
-	server := server.Server(listenAddress, &httpClient)
+	server := server.Server(listenAddress, &httpClient, username, password)
 
 	done := make(chan bool)
 

@@ -36,6 +36,12 @@ type Target struct {
 	HostGroup      string
 	ServiceGroup   string
 	Protocol       string
+	BasicAuth      BasicAuth
+}
+
+type BasicAuth struct {
+	Username string
+	Password string
 }
 
 func NewNagiosCollector(ctx context.Context, netClient *http.Client, target Target) *nagiosCollector {
@@ -172,7 +178,13 @@ func (collector *nagiosCollector) scrape(netClient *http.Client, target Target) 
 		return nil, err
 	}
 	req.Header.Add("User-Agent", "prometheus-nagios-exporter")
-	res, err := netClient.Do(req.WithContext(collector.ctx))
+
+	if target.BasicAuth.Username != "" && target.BasicAuth.Password != "" {
+		req.SetBasicAuth(target.BasicAuth.Username, target.BasicAuth.Password)
+	}
+
+	req = req.WithContext(collector.ctx)
+	res, err := netClient.Do(req)
 
 	if err != nil {
 		return nil, err
