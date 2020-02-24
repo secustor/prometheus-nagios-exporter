@@ -30,6 +30,7 @@ func Collect(httpClient *http.Client) http.Handler {
 		host := r.URL.Query().Get("host")
 		hostGroup := r.URL.Query().Get("hostgroup")
 		serviceGroup := r.URL.Query().Get("servicegroup")
+		protocol := r.URL.Query().Get("protocol")
 
 		if instance == "" {
 			log.WithFields(log.Fields{
@@ -75,6 +76,7 @@ func Collect(httpClient *http.Client) http.Handler {
 			Host:           host,
 			HostGroup:      hostGroup,
 			ServiceGroup:   serviceGroup,
+			Protocol:       protocol,
 		}
 
 		collector := collectors.NewNagiosCollector(ctx, httpClient, target)

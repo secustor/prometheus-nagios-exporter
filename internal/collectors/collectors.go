@@ -35,11 +35,15 @@ type Target struct {
 	Host           string
 	HostGroup      string
 	ServiceGroup   string
+	Protocol       string
 }
 
 func NewNagiosCollector(ctx context.Context, netClient *http.Client, target Target) *nagiosCollector {
 	if target.Host == "" {
 		target.Host = "all"
+	}
+	if target.Protocol == "" {
+		target.Protocol = "http"
 	}
 
 	return &nagiosCollector{
@@ -145,7 +149,7 @@ func parseNagiosOutput(bodyReader io.Reader) ([]Label, error) {
 
 // scrape scrapes the given target with the given netclient and translates the Nagios output to a set of Prometheus labels.
 func (collector *nagiosCollector) scrape(netClient *http.Client, target Target) ([]Label, error) {
-	nagiosUrl, err := url.Parse(fmt.Sprintf("http://%s/nagios/cgi-bin/status.cgi?embedded=1&noheader=1&limit=all&style=detail", target.NagiosInstance))
+	nagiosUrl, err := url.Parse(fmt.Sprintf("%s://%s/nagios/cgi-bin/status.cgi?embedded=1&noheader=1&limit=all&style=detail", target.Protocol, target.NagiosInstance))
 	if err != nil {
 		return nil, err
 	}

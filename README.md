@@ -40,6 +40,9 @@ Whether the last nagios scrape was successful (1: up, 0: down).
 # optional '__meta_nagios_param_host/__meta_nagios_param_hostgroup/__meta_nagios_param_servicegroup' labels passed to the nagios status page
 # useful when a host/hostgroup/servicegroup maps to a different label set on the same instance
 # multiple parameters are not supported and may produce unexpected results
+#
+# A further optional label is '__meta_nagios_param_protocol'. This labels allows to control the protocol which is used
+# to scrape the nagios instance. Valid values are `http` (default) and `https`.
 - job_name: nagios
   scheme: https
   metrics_path: /collect
