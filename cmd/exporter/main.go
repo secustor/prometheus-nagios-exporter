@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,6 +27,7 @@ func main() {
 	pflag.BoolP("verbose", "v", false, "Enable more detailed logging.")
 	pflag.StringP("username", "U", "", "(optional) username for basic auth")
 	pflag.StringP("password", "P", "", "(optional) password for basic auth")
+	pflag.BoolP("insecure", "k", false, "ignore TLS error when connection to Nagios instances")
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
@@ -48,6 +50,16 @@ func main() {
 		// set a lax timeout as Nagios requests can be expected to take ~15 seconds and we use request context cancellation
 		Timeout: time.Second * 20,
 	}
+
+	if viper.GetBool("insecure") {
+		transCfg := http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // ignore expired SSL certificates
+			},
+		}
+		httpClient.Transport = &transCfg
+	}
+
 	server := server.Server(listenAddress, &httpClient, username, password)
 
 	done := make(chan bool)
