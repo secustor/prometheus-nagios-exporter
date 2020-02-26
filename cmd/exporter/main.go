@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Financial-Times/prometheus-nagios-exporter/internal/server"
+	"github.com/itsdone/prometheus-nagios-exporter/pkg/server"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"

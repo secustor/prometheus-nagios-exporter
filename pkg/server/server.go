@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Financial-Times/prometheus-nagios-exporter/internal/handlers"
-	"github.com/Financial-Times/prometheus-nagios-exporter/internal/middleware"
+	"github.com/itsdone/prometheus-nagios-exporter/pkg/handlers"
+	"github.com/itsdone/prometheus-nagios-exporter/pkg/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +14,7 @@ func Server(listenAddress string, httpClient *http.Client, basicAuthUsername str
 	router := http.NewServeMux()
 
 	router.Handle("/", handlers.Index())
-	router.Handle("/__gtg", handlers.GoodToGo())
+	router.Handle("/healthz", handlers.Healthz())
 	router.Handle("/metrics", promhttp.Handler())
 	router.Handle("/collect", handlers.Collect(httpClient, basicAuthUsername, basicAuthPassword))
 

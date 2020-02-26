@@ -1,4 +1,4 @@
-module github.com/Financial-Times/prometheus-nagios-exporter
+module github.com/itsdone/prometheus-nagios-exporter
 
 go 1.12
 

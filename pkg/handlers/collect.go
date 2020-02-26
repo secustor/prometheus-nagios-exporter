@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Financial-Times/prometheus-nagios-exporter/internal/collectors"
+	"github.com/itsdone/prometheus-nagios-exporter/pkg/collectors"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
