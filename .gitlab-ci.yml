@@ -48,7 +48,7 @@ package:container:image:
   stage: package
   extends: .kaniko_template
   variables:
-    IMAGE_NAME: $CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG
+    IMAGE_NAME: $CI_PROJECT_NAME:$CI_COMMIT_REF_NAME
   only:
     refs:
       - tags
