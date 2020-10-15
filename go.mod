@@ -4,11 +4,10 @@ go 1.12
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
-	github.com/prometheus/client_golang v1.7.1
-	github.com/sirupsen/logrus v1.4.2
+	github.com/prometheus/client_golang v1.8.0
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5
