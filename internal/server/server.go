@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/itsdone/prometheus-nagios-exporter/pkg/handlers"
-	"github.com/itsdone/prometheus-nagios-exporter/pkg/middleware"
+	"github.com/itsdone/prometheus-nagios-exporter/internal/handlers"
+	"github.com/itsdone/prometheus-nagios-exporter/internal/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
