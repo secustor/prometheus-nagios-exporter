@@ -28,6 +28,7 @@ func main() {
 	pflag.StringP("username", "U", "", "(optional) username for basic auth")
 	pflag.StringP("password", "P", "", "(optional) password for basic auth")
 	pflag.BoolP("insecure", "k", false, "ignore TLS error when connection to Nagios instances")
+	pflag.IntP("client-timeout", "t", 60, "hard timeout for http requests")
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
@@ -47,8 +48,7 @@ func main() {
 	}
 	listenAddress := fmt.Sprintf(":%d", viper.GetInt("port"))
 	httpClient := http.Client{
-		// set a lax timeout as Nagios requests can be expected to take ~15 seconds and we use request context cancellation
-		Timeout: time.Second * 20,
+		Timeout: time.Second * time.Duration(viper.GetInt("client-timeout")),
 	}
 
 	if viper.GetBool("insecure") {
