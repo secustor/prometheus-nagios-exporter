@@ -60,7 +60,7 @@ func main() {
 		httpClient.Transport = &transCfg
 	}
 
-	server := server.Server(listenAddress, &httpClient, username, password)
+	httpServer := server.Server(listenAddress, &httpClient, username, password)
 
 	done := make(chan bool)
 
@@ -72,7 +72,7 @@ func main() {
 
 		<-quit
 
-		if err := server.Close(); err != nil {
+		if err := httpServer.Close(); err != nil {
 			log.WithFields(log.Fields{
 				"event": "ERROR_STOPPING",
 				"err":   err,
@@ -87,7 +87,7 @@ func main() {
 		"listenAddress": listenAddress,
 	}).Info("nagios exporter is ready to handle requests.")
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.WithFields(log.Fields{
 			"event":         "ERROR_STARTING",
 			"listenAddress": listenAddress,
