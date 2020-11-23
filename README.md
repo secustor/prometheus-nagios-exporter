@@ -97,14 +97,15 @@ View [RUNBOOK.md](./RUNBOOK.md).
 
 ### Parameter
 
-| Parameter      | Shorthand | Environment variable | Default | Description                                                                        |
-| -------------- | --------- | -------------------- | ------- | ---------------------------------------------------------------------------------- |
-| port           | p         | `PORT`               | `8080`  | The port which the service listens to HTTP connections over                        |
-| verbose        | v         | `VERBOSE`            | `false` | Whether to enable verbose logging                                                  |
-| username       | U         | `USERNAME`           | `nil`   | Set username for basic auth at Nagios                                              |
-| password       | P         | `PASSWORD`           | `nil`   | Set password for basic auth at Nagios                                              |
-| insecure       | k         | `INSECURE`           | `false` | Ignore TLS validation errors when calling Nagios                                   |
-| client-timeout | t         | `CLIENT_TIMEOUT`     | `60`    | Hard HTTP client timeout. This should be bigger then the Prometheus Timeout Header |
+| Parameter      | Shorthand | Environment variable | Default  | Description                                                                        |
+| -------------- | --------- | -------------------- | -------- | ---------------------------------------------------------------------------------- |
+| port           | p         | `PORT`               | `8080`   | The port which the service listens to HTTP connections over                        |
+| verbose        | v         | `VERBOSE`            | `false`  | Whether to enable verbose logging                                                  |
+| username       | U         | `USERNAME`           | `nil`    | Set username for basic auth at Nagios                                              |
+| password       | P         | `PASSWORD`           | `nil`    | Set password for basic auth at Nagios                                              |
+| insecure       | k         | `INSECURE`           | `false`  | Ignore TLS validation errors when calling Nagios                                   |
+| client-timeout | t         | `CLIENT_TIMEOUT`     | `60`     | Hard HTTP client timeout. This should be bigger then the Prometheus Timeout Header |
+| log-format     |           | `LOG_FORMAT`         | `logfmt` | Set the logging format. Available values `logfmt` and `json`                       |
 
 ### Local Development
 

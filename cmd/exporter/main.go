@@ -11,11 +11,9 @@ import (
 	"time"
 
 	"github.com/itsdone/prometheus-nagios-exporter/internal/server"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/ssh/terminal"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -29,6 +27,7 @@ func main() {
 	pflag.StringP("password", "P", "", "(optional) password for basic auth")
 	pflag.BoolP("insecure", "k", false, "ignore TLS error when connection to Nagios instances")
 	pflag.IntP("client-timeout", "t", 60, "hard timeout for http requests")
+	pflag.String("log-format", "logfmt", "Set the logging format. Available values `logfmt` and `json`")
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
@@ -37,7 +36,9 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if viper.GetString("log-format") == "logfmt" {
+		log.SetFormatter(&log.TextFormatter{})
+	} else if viper.GetString("log-format") == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
 
