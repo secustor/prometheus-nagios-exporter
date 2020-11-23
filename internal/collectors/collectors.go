@@ -189,7 +189,10 @@ func (collector *nagiosCollector) scrape(netClient *http.Client, target Target) 
 	if err != nil {
 		return nil, err
 	}
-
+	if res.StatusCode >= 400 {
+		var errorCodeResponse = fmt.Errorf("instance returns HTTP code %s", res.Status)
+		return nil, errorCodeResponse
+	}
 	defer res.Body.Close()
 
 	return parseNagiosOutput(res.Body)
@@ -204,7 +207,7 @@ func (collector *nagiosCollector) Collect(ch chan<- prometheus.Metric) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event":    "ERROR_NAGIOS_SCRAPE",
-			"instance": collector.target,
+			"instance": collector.target.NagiosInstance,
 		}).Error(err)
 
 		ch <- prometheus.MustNewConstMetric(
