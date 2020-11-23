@@ -1,7 +1,5 @@
 # prometheus-nagios-exporter
 
-[![CircleCI](https://circleci.com/gh/Financial-Times/prometheus-nagios-exporter.svg?style=shield&circle-token=4c5da94f7bc52bf32b644957a28aca07c3385282)](https://circleci.com/gh/Financial-Times/prometheus-nagios-exporter)
-
 🆙 Prometheus exporter that scrapes a Nagios status pages for alerts.
 
 Prometheus asks this exporter for metrics, one Nagios target at a time.
@@ -93,20 +91,20 @@ Whether the last nagios scrape was successful (1: up, 0: down).
 
 ## Runbook
 
-View [RUNBOOK.md](.//RUNBOOK.md).
+View [RUNBOOK.md](./RUNBOOK.md).
 
 ## Development
 
-### Environment variables
+### Parameter
 
-| Variable  | Default | Description                                                 |
-| --------- | ------- | ----------------------------------------------------------- |
-| `PORT`    | `8080`  | The port which the service listens to HTTP connections over |
-| `VERBOSE` | `false` | Whether to enable verbose logging                           |
-
-### CircleCI
-
-Currently no environment variables are defined on the CircleCI project. Any in use are pulled from a shared CircleCI [context](https://circleci.com/docs/2.0/contexts/).
+| Parameter      | Shorthand | Environment variable | Default | Description                                                                        |
+| -------------- | --------- | -------------------- | ------- | ---------------------------------------------------------------------------------- |
+| port           | p         | `PORT`               | `8080`  | The port which the service listens to HTTP connections over                        |
+| verbose        | v         | `VERBOSE`            | `false` | Whether to enable verbose logging                                                  |
+| username       | U         | `USERNAME`           | `nil`   | Set username for basic auth at Nagios                                              |
+| password       | P         | `PASSWORD`           | `nil`   | Set password for basic auth at Nagios                                              |
+| insecure       | k         | `INSECURE`           | `false` | Ignore TLS validation errors when calling Nagios                                   |
+| client-timeout | t         | `CLIENT_TIMEOUT`     | `60`    | Hard HTTP client timeout. This should be bigger then the Prometheus Timeout Header |
 
 ### Local Development
 
